@@ -1,6 +1,7 @@
 // ======================================================
 // STUDYPILOT
 // COMPLETE FIREBASE STUDY PLANNER
+// (UI upgraded – all core logic preserved)
 // ======================================================
 
 
@@ -79,6 +80,29 @@ const $ = (id) =>
 
 
 let currentUser = null;
+let allTasksCache = [];
+let currentFilter = "all";
+
+
+
+// ================= TOAST ===============================
+
+function showToast(message, type = "success") {
+  const container = $("toastContainer");
+  if (!container) return;
+
+  const toast = document.createElement("div");
+  toast.className = `toast ${type}`;
+  toast.textContent = message;
+  container.appendChild(toast);
+
+  setTimeout(() => {
+    toast.style.opacity = "0";
+    toast.style.transform = "translateY(8px)";
+    toast.style.transition = "0.3s";
+    setTimeout(() => toast.remove(), 300);
+  }, 3200);
+}
 
 
 
@@ -246,6 +270,13 @@ onAuthStateChanged(
       $("logoutBtn")
         .classList
         .remove("hidden");
+
+
+      // Show user email
+      const emailEl = $("userEmail");
+      if (emailEl) {
+        emailEl.textContent = user.email || "Student";
+      }
 
 
       try {
@@ -683,9 +714,7 @@ $("addBtn").onclick = async () => {
 
 
 
-    alert(
-      "Study plan generated successfully! 🎉"
-    );
+    showToast("Study plan generated successfully! 🎉", "success");
 
 
   } catch (error) {
@@ -804,6 +833,30 @@ async function loadData() {
   );
 
 
+  allTasksCache = tasks;
+
+
+
+  // =====================================================
+  // STATS
+  // =====================================================
+
+  const completedCount = tasks.filter(t => t.done === true).length;
+  const percentage = tasks.length > 0
+    ? Math.round((completedCount / tasks.length) * 100)
+    : 0;
+
+  const statSubjects = $("statSubjects");
+  const statTasks = $("statTasks");
+  const statCompleted = $("statCompleted");
+  const statProgress = $("statProgress");
+
+  if (statSubjects) statSubjects.textContent = subjects.length;
+  if (statTasks) statTasks.textContent = tasks.length;
+  if (statCompleted) statCompleted.textContent = completedCount;
+  if (statProgress) statProgress.textContent = percentage + "%";
+
+
 
   // =====================================================
   // SUBJECT DISPLAY
@@ -817,39 +870,15 @@ async function loadData() {
 
           return `
 
-            <div class="subjectBox">
+            <div class="subject-card">
 
-              <b>
-                ${escapeHtml(
-                  subject.subject
-                )}
-              </b>
+              <h3>📚 ${escapeHtml(subject.subject)}</h3>
 
-              <br>
-
-              <small>
-
-                ${
-                  subject.topics
-                    ? subject.topics.length
-                    : 0
-                }
-
-                topics
-
-                • Exam:
-
-                ${escapeHtml(
-                  subject.examDate
-                )}
-
-                • Daily:
-
-                ${
-                  subject.dailyHours
-                } hrs
-
-              </small>
+              <div class="subject-meta">
+                <span>${subject.topics ? subject.topics.length : 0} topics</span>
+                <span>Exam: ${escapeHtml(subject.examDate)}</span>
+                <span>Daily: ${subject.dailyHours} hrs</span>
+              </div>
 
             </div>
 
@@ -862,7 +891,7 @@ async function loadData() {
   } else {
 
     $("subjects").innerHTML =
-      "<p>No subjects yet.</p>";
+      `<div class="empty-state"><div class="emoji">📖</div><p>No subjects yet. Add one above!</p></div>`;
 
   }
 
@@ -906,9 +935,11 @@ async function loadData() {
 
     $("todayTasks").innerHTML =
       `
-        <p>
-          🎉 No tasks for today.
-        </p>
+        <div class="empty-state">
+          <div class="emoji">🎉</div>
+          <p>You're all caught up!</p>
+          <p style="font-size:0.85rem;margin-top:4px;color:var(--text-dim)">No tasks scheduled for today.</p>
+        </div>
       `;
 
   }
@@ -916,33 +947,10 @@ async function loadData() {
 
 
   // =====================================================
-  // ALL TASKS
+  // ALL TASKS (with filter support)
   // =====================================================
 
-  if (tasks.length > 0) {
-
-    $("tasks").innerHTML =
-      tasks
-        .map(
-          task =>
-            createTaskHTML(
-              task,
-              false
-            )
-        )
-        .join("");
-
-  } else {
-
-    $("tasks").innerHTML =
-      `
-        <p>
-          Add your first subject
-          to generate tasks.
-        </p>
-      `;
-
-  }
+  renderFilteredTasks(tasks);
 
 
 
@@ -958,24 +966,6 @@ async function loadData() {
   // PROGRESS
   // =====================================================
 
-  const completedTasks =
-    tasks.filter(
-      task =>
-        task.done === true
-    ).length;
-
-
-  const percentage =
-    tasks.length > 0
-      ? Math.round(
-          (
-            completedTasks /
-            tasks.length
-          ) * 100
-        )
-      : 0;
-
-
   $("progressBar")
     .style
     .width =
@@ -984,8 +974,54 @@ async function loadData() {
 
   $("progressText")
     .textContent =
-      `${percentage}% completed (${completedTasks}/${tasks.length})`;
+      `${percentage}% completed (${completedCount}/${tasks.length})`;
 
+
+  // Circular progress
+  const circle = $("progressCircle");
+  const percentEl = $("progressPercent");
+  if (circle) {
+    const circumference = 2 * Math.PI * 54; // r=54
+    const offset = circumference - (percentage / 100) * circumference;
+    circle.style.strokeDasharray = circumference;
+    circle.style.strokeDashoffset = offset;
+  }
+  if (percentEl) {
+    percentEl.textContent = percentage + "%";
+  }
+
+}
+
+
+
+// ======================================================
+// FILTER TASKS
+// ======================================================
+
+function renderFilteredTasks(tasks) {
+  const todayString = formatDate(new Date());
+  let filtered = tasks;
+
+  if (currentFilter === "pending") {
+    filtered = tasks.filter(t => !t.done);
+  } else if (currentFilter === "completed") {
+    filtered = tasks.filter(t => t.done);
+  } else if (currentFilter === "today") {
+    filtered = tasks.filter(t => t.date === todayString);
+  }
+
+  if (filtered.length > 0) {
+    $("tasks").innerHTML = filtered
+      .map(task => createTaskHTML(task, task.date === todayString))
+      .join("");
+  } else {
+    $("tasks").innerHTML = `
+      <div class="empty-state">
+        <div class="emoji">📝</div>
+        <p>${currentFilter === "all" ? "Add your first subject to generate tasks." : "No tasks match this filter."}</p>
+      </div>
+    `;
+  }
 }
 
 
@@ -1015,89 +1051,66 @@ function createTaskHTML(
 
     <div
       class="task ${doneClass} ${todayClass}"
-      style="
-        display:flex;
-        flex-wrap:wrap;
-        gap:10px;
-        align-items:center;
-        margin-bottom:10px;
-      "
     >
 
       <!-- CHECKBOX -->
 
       <input
         type="checkbox"
-        class="taskCheck"
+        class="taskCheck task-check"
         data-id="${task.id}"
         ${
           task.done
             ? "checked"
             : ""
         }
-        style="width:auto"
       >
 
 
 
-      <!-- TASK NAME -->
+      <!-- TASK BODY -->
 
-      <span style="flex:1; min-width:180px">
-
-        <b>
-          ${escapeHtml(
-            task.subject
-          )}
-        </b>
-
-        —
-
-        ${escapeHtml(
-          task.topic
-        )}
-
-        ${
-          todayTask
-            ? " 🔥"
-            : ""
-        }
-
-      </span>
+      <div class="task-body">
+        <div class="task-title">
+          <span class="subject-badge">${escapeHtml(task.subject)}</span>
+          ${escapeHtml(task.topic)}
+          ${todayTask ? " 🔥" : ""}
+        </div>
+        <div class="task-meta">
+          ${escapeHtml(task.date)}
+        </div>
+      </div>
 
 
 
-      <!-- DATE -->
+      <!-- ACTIONS -->
 
-      <input
-        type="date"
-        class="taskDate"
-        data-id="${task.id}"
-        value="${escapeHtml(
-          task.date
-        )}"
-      >
+      <div class="task-actions">
 
+        <input
+          type="date"
+          class="taskDate task-date"
+          data-id="${task.id}"
+          value="${escapeHtml(task.date)}"
+        >
 
+        <button
+          class="saveDateBtn btn-icon"
+          data-id="${task.id}"
+          title="Save date"
+        >
+          💾
+        </button>
 
-      <!-- SAVE DATE -->
+        <button
+          class="deleteTaskBtn btn-icon btn-danger"
+          data-id="${task.id}"
+          title="Delete"
+        >
+          🗑️
+        </button>
 
-      <button
-        class="saveDateBtn secondary"
-        data-id="${task.id}"
-      >
-        💾
-      </button>
-
-
-
-      <!-- DELETE -->
-
-      <button
-        class="deleteTaskBtn secondary"
-        data-id="${task.id}"
-      >
-        🗑️
-      </button>
+      </div>
 
     </div>
 
@@ -1226,9 +1239,7 @@ function attachTaskEvents() {
               await loadData();
 
 
-              alert(
-                "Task date updated! 📅"
-              );
+              showToast("Task date updated! 📅", "success");
 
 
             } catch (error) {
@@ -1426,9 +1437,7 @@ $("adjustBtn").onclick =
         unfinished.length === 0
       ) {
 
-        alert(
-          "🎉 Saare tasks complete hain!"
-        );
+        showToast("🎉 Saare tasks complete hain!", "success");
 
         return;
 
@@ -1682,9 +1691,7 @@ $("adjustBtn").onclick =
         changed === 0
       ) {
 
-        alert(
-          "Plan already properly arranged hai. 👍"
-        );
+        showToast("Plan already properly arranged hai. 👍", "success");
 
         return;
 
@@ -1698,8 +1705,9 @@ $("adjustBtn").onclick =
       await loadData();
 
 
-      alert(
-        `${changed} unfinished task(s) ko smartly reschedule kar diya! 🔄`
+      showToast(
+        `${changed} unfinished task(s) ko smartly reschedule kar diya! 🔄`,
+        "success"
       );
 
 
@@ -1794,3 +1802,42 @@ function escapeHtml(value) {
     );
 
 }
+
+
+
+// ======================================================
+// UI HELPERS (sidebar + filters) – pure presentation
+// ======================================================
+
+document.addEventListener("DOMContentLoaded", () => {
+
+  // Sidebar toggle (mobile)
+  const toggle = $("sidebarToggle");
+  const sidebar = $("sidebar");
+  if (toggle && sidebar) {
+    toggle.onclick = () => {
+      sidebar.classList.toggle("open");
+    };
+  }
+
+  // Nav active state
+  document.querySelectorAll(".nav-item").forEach(item => {
+    item.addEventListener("click", () => {
+      document.querySelectorAll(".nav-item").forEach(n => n.classList.remove("active"));
+      item.classList.add("active");
+      if (sidebar) sidebar.classList.remove("open");
+    });
+  });
+
+  // Filter buttons
+  document.querySelectorAll(".filter-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll(".filter-btn").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      currentFilter = btn.dataset.filter || "all";
+      renderFilteredTasks(allTasksCache);
+      attachTaskEvents();
+    });
+  });
+
+});

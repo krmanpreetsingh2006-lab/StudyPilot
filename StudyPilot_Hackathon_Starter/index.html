@@ -1,179 +1,266 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-  <title>StudyPilot</title>
-
+  <title>StudyPilot – Adaptive Study Planner</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
-
 <body>
 
-  <header>
-    <h1>🚀 StudyPilot</h1>
-    <p>Adaptive Study Planner</p>
+  <!-- ===================== AUTH / LANDING ===================== -->
+  <section id="authCard" class="auth-screen">
+    <div class="auth-bg">
+      <div class="orb orb-1"></div>
+      <div class="orb orb-2"></div>
+      <div class="orb orb-3"></div>
+      <div class="grid-overlay"></div>
+    </div>
 
-    <button id="logoutBtn" class="secondary hidden">
-      Logout
-    </button>
-  </header>
-
-
-  <main>
-
-    <!-- ================= LOGIN ================= -->
-
-    <section id="authCard" class="card">
-
-      <h2>Student Login</h2>
-
-      <input
-        id="email"
-        type="email"
-        placeholder="Email"
-      >
-
-      <input
-        id="password"
-        type="password"
-        placeholder="Password"
-      >
-
-      <div class="row">
-
-        <button id="loginBtn">
-          Login
-        </button>
-
-        <button id="signupBtn" class="secondary">
-          Create Account
-        </button>
-
+    <div class="auth-container">
+      <div class="brand">
+        <div class="logo-mark">🚀</div>
+        <h1>StudyPilot</h1>
+        <p class="subtitle">Your Adaptive Study Planner</p>
+        <p class="tagline">Plan smarter. Study consistently. Achieve more.</p>
       </div>
 
-      <p id="authMsg"></p>
+      <div class="auth-card glass">
+        <h2>Welcome back</h2>
+        <p class="auth-desc">Sign in to continue your study journey</p>
 
-    </section>
-
-
-
-    <!-- ================= MAIN APP ================= -->
-
-    <section id="app" class="hidden">
-
-
-      <!-- ADD SUBJECT -->
-
-      <div class="card">
-
-        <h2>📚 Add Subject</h2>
-
-        <input
-          id="subject"
-          placeholder="Subject e.g. Physics"
-        >
-
-        <input
-          id="topics"
-          placeholder="Topics (comma separated)"
-        >
-
-        <input
-          id="examDate"
-          type="date"
-        >
-
-        <input
-          id="hours"
-          type="number"
-          min="1"
-          max="12"
-          value="2"
-          placeholder="Daily study hours"
-        >
-
-        <button id="addBtn">
-          Add & Generate Plan
-        </button>
-
-      </div>
-
-
-
-      <!-- TODAY -->
-
-      <div class="card">
-
-        <h2>📅 Today's Tasks</h2>
-
-        <div id="todayTasks"></div>
-
-      </div>
-
-
-
-      <!-- ALL TASKS -->
-
-      <div class="card">
-
-        <h2>📝 All Study Tasks</h2>
-
-        <div id="tasks"></div>
-
-        <button id="adjustBtn" class="secondary">
-          🔄 Smart Adjust Plan
-        </button>
-
-      </div>
-
-
-
-      <!-- PROGRESS -->
-
-      <div class="card">
-
-        <h2>📊 Progress</h2>
-
-        <div class="progress">
-
-          <div id="progressBar"></div>
-
+        <div class="form-group">
+          <label for="email">Email</label>
+          <input id="email" type="email" placeholder="you@example.com" autocomplete="email">
         </div>
 
-        <p id="progressText">
-          0% completed
-        </p>
+        <div class="form-group">
+          <label for="password">Password</label>
+          <input id="password" type="password" placeholder="••••••••" autocomplete="current-password">
+        </div>
 
+        <div class="auth-actions">
+          <button id="loginBtn" class="btn btn-primary">Login</button>
+          <button id="signupBtn" class="btn btn-secondary">Create Account</button>
+        </div>
+
+        <p id="authMsg" class="auth-msg"></p>
       </div>
+    </div>
+  </section>
 
+  <!-- ===================== MAIN APP ===================== -->
+  <div id="app" class="app-shell hidden">
 
-
-      <!-- SUBJECTS -->
-
-      <div class="card">
-
-        <h2>📖 Subjects</h2>
-
-        <div id="subjects"></div>
-
+    <!-- Top Navigation -->
+    <header class="topbar">
+      <div class="topbar-left">
+        <button id="sidebarToggle" class="icon-btn mobile-only" aria-label="Toggle menu">☰</button>
+        <div class="brand-mini">
+          <span class="logo-mark-sm">🚀</span>
+          <span class="brand-name">StudyPilot</span>
+        </div>
+        <span class="nav-label">Dashboard</span>
       </div>
+      <div class="topbar-right">
+        <div class="user-chip">
+          <span class="avatar">👤</span>
+          <span id="userEmail" class="user-email"></span>
+        </div>
+        <button id="logoutBtn" class="btn btn-ghost">Logout</button>
+      </div>
+    </header>
 
+    <div class="layout">
+      <!-- Sidebar -->
+      <aside id="sidebar" class="sidebar">
+        <nav class="side-nav">
+          <a href="#section-dashboard" class="nav-item active" data-section="dashboard">
+            <span class="nav-icon">🏠</span>
+            <span>Dashboard</span>
+          </a>
+          <a href="#section-subjects" class="nav-item" data-section="subjects">
+            <span class="nav-icon">📚</span>
+            <span>Subjects</span>
+          </a>
+          <a href="#section-today" class="nav-item" data-section="today">
+            <span class="nav-icon">📅</span>
+            <span>Today's Tasks</span>
+          </a>
+          <a href="#section-tasks" class="nav-item" data-section="tasks">
+            <span class="nav-icon">📝</span>
+            <span>All Tasks</span>
+          </a>
+          <a href="#section-progress" class="nav-item" data-section="progress">
+            <span class="nav-icon">📊</span>
+            <span>Progress</span>
+          </a>
+        </nav>
+      </aside>
 
-    </section>
+      <!-- Main Content -->
+      <main class="main-content">
 
-  </main>
+        <!-- Hero -->
+        <section id="section-dashboard" class="hero-section">
+          <div class="hero-content">
+            <h1 class="hero-title">Good to see you! 👋</h1>
+            <p class="hero-subtitle">Let's make today productive.</p>
+            <p class="hero-quote">“Small progress every day leads to big results.”</p>
+          </div>
+        </section>
 
+        <!-- Stats Cards -->
+        <section class="stats-grid">
+          <div class="stat-card glass">
+            <div class="stat-icon">📚</div>
+            <div class="stat-body">
+              <span class="stat-value" id="statSubjects">0</span>
+              <span class="stat-label">Total Subjects</span>
+            </div>
+          </div>
+          <div class="stat-card glass">
+            <div class="stat-icon">📝</div>
+            <div class="stat-body">
+              <span class="stat-value" id="statTasks">0</span>
+              <span class="stat-label">Total Tasks</span>
+            </div>
+          </div>
+          <div class="stat-card glass">
+            <div class="stat-icon">✅</div>
+            <div class="stat-body">
+              <span class="stat-value" id="statCompleted">0</span>
+              <span class="stat-label">Completed Tasks</span>
+            </div>
+          </div>
+          <div class="stat-card glass accent">
+            <div class="stat-icon">📈</div>
+            <div class="stat-body">
+              <span class="stat-value" id="statProgress">0%</span>
+              <span class="stat-label">Overall Progress</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- Add Subject / Generate Plan -->
+        <section class="panel glass">
+          <div class="panel-header">
+            <h2>📚 Add Subject & Generate Plan</h2>
+            <p class="panel-desc">Enter subject details and let StudyPilot create your adaptive schedule.</p>
+          </div>
+
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="subject">Subject Name</label>
+              <input id="subject" type="text" placeholder="e.g. Physics">
+            </div>
+            <div class="form-group">
+              <label for="topics">Topics (comma separated)</label>
+              <input id="topics" type="text" placeholder="Mechanics, Optics, Thermodynamics">
+            </div>
+            <div class="form-group">
+              <label for="examDate">Exam Date</label>
+              <input id="examDate" type="date">
+            </div>
+            <div class="form-group">
+              <label for="hours">Daily Study Hours</label>
+              <input id="hours" type="number" min="1" max="12" value="2" placeholder="2">
+            </div>
+          </div>
+
+          <button id="addBtn" class="btn btn-primary btn-lg">
+            🚀 Generate Study Plan
+          </button>
+        </section>
+
+        <!-- Today's Tasks -->
+        <section id="section-today" class="panel glass">
+          <div class="panel-header">
+            <h2>📅 Today's Tasks</h2>
+            <p class="panel-desc">Focus on what matters today.</p>
+          </div>
+          <div id="todayTasks" class="task-list"></div>
+        </section>
+
+        <!-- All Tasks -->
+        <section id="section-tasks" class="panel glass">
+          <div class="panel-header">
+            <h2>📝 All Study Tasks</h2>
+            <p class="panel-desc">Manage, reschedule and track every task.</p>
+          </div>
+
+          <div class="filter-bar">
+            <button class="filter-btn active" data-filter="all">All</button>
+            <button class="filter-btn" data-filter="pending">Pending</button>
+            <button class="filter-btn" data-filter="completed">Completed</button>
+            <button class="filter-btn" data-filter="today">Today</button>
+          </div>
+
+          <div id="tasks" class="task-list"></div>
+
+          <div class="smart-adjust-card">
+            <div class="smart-adjust-info">
+              <h3>🔄 Smart Adjust Plan</h3>
+              <p>Automatically reorganize unfinished tasks to keep your study plan on track.</p>
+            </div>
+            <button id="adjustBtn" class="btn btn-secondary">Run Smart Adjust</button>
+          </div>
+        </section>
+
+        <!-- Progress -->
+        <section id="section-progress" class="panel glass">
+          <div class="panel-header">
+            <h2>📊 Progress</h2>
+            <p class="panel-desc">Track your overall completion.</p>
+          </div>
+
+          <div class="progress-showcase">
+            <div class="circular-progress">
+              <svg viewBox="0 0 120 120">
+                <circle class="bg" cx="60" cy="60" r="54"></circle>
+                <circle id="progressCircle" class="fg" cx="60" cy="60" r="54"></circle>
+              </svg>
+              <div class="circular-value">
+                <span id="progressPercent">0%</span>
+              </div>
+            </div>
+
+            <div class="progress-details">
+              <div class="progress-bar-wrap">
+                <div class="progress-bar">
+                  <div id="progressBar"></div>
+                </div>
+              </div>
+              <p id="progressText" class="progress-text">0% completed (0/0)</p>
+            </div>
+          </div>
+        </section>
+
+        <!-- Subjects -->
+        <section id="section-subjects" class="panel glass">
+          <div class="panel-header">
+            <h2>📚 Subjects</h2>
+            <p class="panel-desc">All your registered subjects at a glance.</p>
+          </div>
+          <div id="subjects" class="subjects-grid"></div>
+        </section>
+
+      </main>
+    </div>
+
+    <!-- Footer -->
+    <footer class="app-footer">
+      <p>© 2026 StudyPilot. All Rights Reserved.</p>
+      <p>Designed & Developed by Manpreet Singh</p>
+    </footer>
+  </div>
+
+  <!-- Toast Container -->
+  <div id="toastContainer" class="toast-container"></div>
 
   <script type="module" src="app.js"></script>
-
-<footer>
-  <p>© 2026 StudyPilot. All Rights Reserved.</p>
-  <p>Designed & Developed by Manpreet Singh</p>
-</footer>
-
 </body>
-
 </html>
